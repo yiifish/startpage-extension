@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>起始页</title>
+<meta name="theme-color" content="#ffffff">
+<link rel="stylesheet" href="startpage.css">
+</head>
+<body>
+
+<main class="page">
+  <!-- 时间 -->
+  <div class="top">
+    <div class="clock" id="clock">--:--</div>
+    <div class="date" id="date"></div>
+  </div>
+
+  <!-- 搜索区域：点击左侧圆钮弹出引擎菜单，Alt+1~4 快捷切换，回车提交 -->
+  <div class="search-area" id="searchArea">
+    <form class="search" id="searchForm" autocomplete="off">
+      <button type="button" class="engine-btn" id="engineBtn" title="切换搜索引擎（Alt+1~4 快捷切换）">百</button>
+      <input id="searchInput" type="text" autocomplete="off" spellcheck="false" placeholder="输入关键词，回车搜索">
+    </form>
+
+    <!-- 引擎选择菜单 -->
+    <div class="engine-menu" id="engineMenu" role="menu"></div>
+  </div>
+
+  <!-- 快捷收藏栏 -->
+  <div class="bookmarks" id="bookmarks"></div>
+</main>
+
+<!-- 添加 / 编辑收藏弹窗 -->
+<div class="modal-mask" id="modalMask" hidden>
+  <div class="modal">
+    <h3 id="modalTitle">添加收藏</h3>
+    <label>名称<input id="mName" type="text" placeholder="例如：GitHub"></label>
+    <label>网址<input id="mUrl" type="text" placeholder="https://example.com"></label>
+    <label>图标（可选：一个 emoji 或图片网址）<input id="mIcon" type="text" placeholder="如 🔥 或 https://..."></label>
+    <div class="modal-actions">
+      <button type="button" id="mCancel">取消</button>
+      <button type="button" id="mOk" class="primary">保存</button>
+    </div>
+  </div>
+</div>
+
+<script src="startpage.js"></script>
+</body>
+</html>
+

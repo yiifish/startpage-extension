@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>起始页</title>
+<meta name="theme-color" content="#ffffff">
+<style>
+  :root{
+    --text:#202124;
+    --muted:#9aa0a6;
+    --line:#e5e7eb;
+    --dark:#1f2329;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    background:
+      radial-gradient(1000px 560px at 50% 28%, rgba(99,102,241,.055), transparent 70%),
+      radial-gradient(760px 420px at 12% 85%, rgba(14,165,233,.045), transparent 70%),
+      radial-gradient(760px 420px at 88% 82%, rgba(236,72,153,.04), transparent 70%),
+      #ffffff;
+    color:var(--text);
+    -webkit-font-smoothing:antialiased;
+  }
+  .page{
+    min-height:100%;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:18px;
+    padding:24px;
+  }
+  /* 入场动画：逐段上浮淡入 */
+  @keyframes rise{
+    from{opacity:0;transform:translateY(14px)}
+    to{opacity:1;transform:translateY(0)}
+  }
+  .page > *{animation:rise .55s cubic-bezier(.22,.61,.36,1) both}
+  .page > *:nth-child(2){animation-delay:.08s}
+  .page > *:nth-child(3){animation-delay:.16s}
+
+  /* ---- 时间 ---- */
+  .top{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    margin-bottom:12px;
+  }
+  .clock{
+    font-size:56px;
+    font-weight:200;
+    line-height:1;
+    color:#1f2329;
+    font-variant-numeric:tabular-nums;
+    letter-spacing:.01em;
+  }
+  .date{
+    margin-top:10px;
+    font-size:13px;
+    letter-spacing:.14em;
+    color:#a5abb3;
+  }
+
+  /* ---- 搜索区域 ---- */
+  .search-area{
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+  }
+  /* 引擎选择菜单：点击圆钮向上弹出，靠左与圆钮对齐 */
+  .engine-menu{
+    position:absolute;
+    bottom:calc(100% + 12px);
+    left:10px;
+    width:224px;
+    background:#fff;
+    border-radius:14px;
+    padding:6px;
+    box-shadow:0 12px 32px rgba(16,24,40,.14), 0 0 0 1px rgba(16,24,40,.05);
+    opacity:0;
+    visibility:hidden;
+    pointer-events:none;
+    transform:translateY(6px) scale(.97);
+    transform-origin:bottom left;
+    transition:opacity .16s ease, transform .16s ease, visibility .16s;
+    z-index:5;
+  }
+  .search-area.show .engine-menu{
+    opacity:1;
+    visibility:visible;
+    pointer-events:auto;
+    transform:translateY(0) scale(1);
+  }
+  .engine-option{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    width:100%;
+    border:0;
+    background:transparent;
+    padding:9px 12px;
+    border-radius:9px;
+    cursor:pointer;
+    font-family:inherit;
+    font-size:14px;
+    color:var(--text);
+    text-align:left;
+    transition:background .12s ease;
+  }
+  .engine-option:hover{background:#f4f5f7}
+  .eo-dot{
+    width:10px;
+    height:10px;
+    border-radius:50%;
+    flex-shrink:0;
+  }
+  .eo-name{flex:1}
+  .eo-check{
+    color:#6366f1;
+    font-size:13px;
+    opacity:0;
+    transform:scale(.6);
+    transition:opacity .15s ease, transform .15s ease;
+  }
+  .engine-option.active .eo-check{opacity:1;transform:scale(1)}
+  .menu-hint{
+    padding:7px 12px 5px;
+    font-size:11px;
+    color:#b0b3b8;
+    text-align:center;
+    border-top:1px solid #f0f1f3;
+    margin-top:4px;
+  }
+
+  /* ---- 搜索栏 ---- */
+  .search{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    width:min(720px,92vw);
+    height:62px;
+    padding:0 24px 0 10px;   /* 左内边距 10px，使圆钮与端部圆弧同心 */
+    border:1px solid #e2e6ec;
+    border-radius:31px;
+    background:#fff;
+    box-shadow:0 1px 2px rgba(16,24,40,.04), 0 8px 26px rgba(16,24,40,.06);
+    transition:box-shadow .25s ease, border-color .25s ease;
+  }
+  .search:hover{
+    border-color:#d5dae2;
+    box-shadow:0 1px 2px rgba(16,24,40,.05), 0 10px 30px rgba(16,24,40,.09);
+  }
+  .search:focus-within{
+    border-color:#c9d0da;
+    box-shadow:0 0 0 4px rgba(99,102,241,.08), 0 12px 34px rgba(16,24,40,.10);
+  }
+  .engine-btn{
+    width:42px;
+    height:42px;
+    border-radius:50%;
+    border:1px solid #e2e6ec;
+    background:#f7f8fa;
+    color:#4a4d52;
+    font-size:16px;
+    font-weight:600;
+    font-family:inherit;
+    cursor:pointer;
+    flex-shrink:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow:0 1px 3px rgba(16,24,40,.05);
+    transition:transform .15s ease, box-shadow .15s ease, background .15s ease, border-color .15s ease;
+  }
+  .engine-btn:hover{
+    background:#eef0f3;
+    border-color:#d5dae2;
+    transform:translateY(-1px);
+    box-shadow:0 4px 12px rgba(16,24,40,.10);
+  }
+  .engine-btn:active{transform:scale(.94)}
+  @keyframes pop{
+    0%{transform:scale(.85)}
+    50%{transform:scale(1.12)}
+    100%{transform:scale(1)}
+  }
+  .engine-btn.pop{animation:pop .28s ease}
+  #searchInput{
+    flex:1;
+    min-width:0;
+    border:0;
+    outline:0;
+    background:transparent;
+    font-size:18px;
+    color:var(--text);
+    font-family:inherit;
+  }
+  #searchInput::placeholder{color:#b6bcc4}
+
+  /* ---- 快捷收藏栏（每行 10 个，超出自动换行） ---- */
+  .bookmarks{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(64px, 64px));
+    justify-content:center;
+    gap:28px;
+    width:100%;
+    max-width:892px;   /* 64*10 + 28*9 = 892，正好每行 10 个 */
+    margin-top:28px;
+  }
+  .bookmark{
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:8px;
+    width:64px;
+    text-decoration:none;
+    font-size:12px;
+    color:var(--muted);
+  }
+  .b-icon{
+    width:52px;
+    height:52px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:20px;
+    font-weight:600;
+    user-select:none;
+    box-shadow:inset 0 0 0 1px rgba(15,23,42,.04);
+    transition:transform .18s ease, box-shadow .18s ease;
+  }
+  .bookmark:hover .b-icon{
+    transform:translateY(-4px);
+    box-shadow:0 8px 18px rgba(15,23,42,.10), inset 0 0 0 1px rgba(15,23,42,.04);
+  }
+  /* DeepSeek Harness 专属图标 */
+  .b-icon.harness{
+    background:linear-gradient(135deg,#6366f1,#8b5cf6)!important;
+    color:#fff!important;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.18), 0 2px 10px rgba(99,102,241,.35);
+  }
+  .bookmark:hover .b-icon.harness{box-shadow:0 10px 22px rgba(99,102,241,.42), inset 0 0 0 1px rgba(255,255,255,.18)}
+  .b-icon img{
+    width:26px;
+    height:26px;
+    border-radius:6px;
+  }
+  .b-name{
+    max-width:80px;
+    text-align:center;
+    line-height:1.3;
+    transition:color .15s ease;
+  }
+  .bookmark:hover .b-name{color:var(--text)}
+  .b-del{
+    position:absolute;
+    top:-6px;
+    right:-6px;
+    width:20px;
+    height:20px;
+    border-radius:50%;
+    border:0;
+    background:#f2f3f5;
+    color:#6b6f76;
+    font-size:13px;
+    line-height:1;
+    cursor:pointer;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:1;
+  }
+  .bookmark:hover .b-del{display:flex}
+  .b-del:hover{background:#fee2e2;color:#dc2626}
+
+  /* 添加按钮 */
+  .b-add{border:0;background:transparent;cursor:pointer;font-family:inherit}
+  .b-add .b-icon{
+    border:1.5px dashed #d4d7dd;
+    background:#fafbfc;
+    font-size:26px;
+    font-weight:400;
+    color:#b0b3b8;
+  }
+  .b-add:hover .b-icon{border-color:#9aa0a6;color:#6b6f76}
+  .b-add:hover .b-icon{box-shadow:none;transform:none}
+
+  /* ---- 弹窗 ---- */
+  .modal-mask{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.35);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:10;
+  }
+  .modal-mask[hidden]{display:none}
+  .modal{
+    width:min(420px,90vw);
+    background:#fff;
+    border-radius:14px;
+    padding:24px;
+    box-shadow:0 20px 60px rgba(0,0,0,.2);
+  }
+  .modal h3{font-size:16px;font-weight:600;margin-bottom:16px}
+  .modal label{
+    display:block;
+    font-size:13px;
+    color:var(--muted);
+    margin-bottom:12px;
+  }
+  .modal input{
+    display:block;
+    width:100%;
+    margin-top:6px;
+    height:36px;
+    padding:0 12px;
+    border:1px solid var(--line);
+    border-radius:8px;
+    font-size:14px;
+    font-family:inherit;
+    outline:none;
+    color:var(--text);
+  }
+  .modal input:focus{border-color:var(--dark)}
+  .modal-actions{
+    display:flex;
+    justify-content:flex-end;
+    gap:10px;
+    margin-top:18px;
+  }
+  .modal-actions button{
+    height:34px;
+    padding:0 16px;
+    border-radius:8px;
+    border:1px solid var(--line);
+    background:#fff;
+    font-size:14px;
+    font-family:inherit;
+    cursor:pointer;
+    color:var(--text);
+  }
+  .modal-actions button:hover{background:#f6f7f8}
+  .modal-actions button.primary{
+    background:var(--dark);
+    color:#fff;
+    border-color:var(--dark);
+  }
+  .modal-actions button.primary:hover{opacity:.9;background:var(--dark)}
+</style>
+</head>
+<body>
+
+<main class="page">
+  <!-- 时间 -->
+  <div class="top">
+    <div class="clock" id="clock">--:--</div>
+    <div class="date" id="date"></div>
+  </div>
+
+  <!-- 搜索区域：点击左侧圆钮弹出引擎菜单，Alt+1~4 快捷切换，回车提交 -->
+  <div class="search-area" id="searchArea">
+    <form class="search" id="searchForm" autocomplete="off">
+      <button type="button" class="engine-btn" id="engineBtn" title="切换搜索引擎（Alt+1~4 快捷切换）">百</button>
+      <input id="searchInput" type="text" autocomplete="off" spellcheck="false" placeholder="输入关键词，回车搜索">
+    </form>
+
+    <!-- 引擎选择菜单 -->
+    <div class="engine-menu" id="engineMenu" role="menu"></div>
+  </div>
+
+  <!-- 快捷收藏栏 -->
+  <div class="bookmarks" id="bookmarks"></div>
+</main>
+
+<!-- 添加 / 编辑收藏弹窗 -->
+<div class="modal-mask" id="modalMask" hidden>
+  <div class="modal">
+    <h3 id="modalTitle">添加收藏</h3>
+    <label>名称<input id="mName" type="text" placeholder="例如：GitHub"></label>
+    <label>网址<input id="mUrl" type="text" placeholder="https://example.com"></label>
+    <label>图标（可选：一个 emoji 或图片网址）<input id="mIcon" type="text" placeholder="如 🔥 或 https://..."></label>
+    <div class="modal-actions">
+      <button type="button" id="mCancel">取消</button>
+      <button type="button" id="mOk" class="primary">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  /* ================= 搜索引擎 =================
+     baidu / google 为常规搜索；doubao / deepseek 为网页版 AI，
+     输入内容后回车直接跳转到对应网页版（空内容则打开首页）。 */
+  var ENGINES = {
+    baidu:    { name:'百度',    color:'#de1d20', build:function(q){ return 'https://www.baidu.com/s?wd=' + encodeURIComponent(q); } },
+    google:   { name:'Google',  color:'#4285f4', build:function(q){ return 'https://www.google.com/search?q=' + encodeURIComponent(q); } },
+    doubao:   { name:'豆包',    color:'#6c5ce7', build:function(q){ return q ? 'https://www.doubao.com/chat/?q=' + encodeURIComponent(q) : 'https://www.doubao.com/chat/'; } },
+    deepseek: { name:'DeepSeek',color:'#4d6bfe', build:function(q){ return q ? 'https://chat.deepseek.com/?q=' + encodeURIComponent(q) : 'https://chat.deepseek.com/'; } }
+  };
+
+  /* ================= 默认收藏（可自行修改） ================= */
+  var DEFAULT_BOOKMARKS = [
+    { name:'DeepSeek Harness', url:'dsh://start' },
+    { name:'GitHub',      url:'https://github.com' },
+    { name:'哔哩哔哩',     url:'https://www.bilibili.com' },
+    { name:'知乎',        url:'https://www.zhihu.com' },
+    { name:'掘金',        url:'https://juejin.cn' },
+    { name:'V2EX',       url:'https://www.v2ex.com' },
+    { name:'网易云音乐',   url:'https://music.163.com' },
+    { name:'少数派',      url:'https://sspai.com' },
+    { name:'百度翻译',     url:'https://fanyi.baidu.com' }
+  ];
+
+  var KEY_ENGINE = 'sp.engine';
+  var KEY_BOOKMARKS = 'sp.bookmarks';
+
+  /* ================= 状态 ================= */
+  var engine = localStorage.getItem(KEY_ENGINE) || 'baidu';
+  if (!ENGINES[engine]) engine = 'baidu';
+  var bookmarks;
+  try { bookmarks = JSON.parse(localStorage.getItem(KEY_BOOKMARKS) || ''); } catch(e){ bookmarks = null; }
+  if (!Array.isArray(bookmarks)) bookmarks = DEFAULT_BOOKMARKS.slice();
+
+  /* 确保「启动 DeepSeek Harness」收藏存在，并指向 dsh:// 自动启动协议（固定在第一位） */
+  var harnessRe = /127\.0\.0\.1:3080|^dsh:\/\//i;
+  var hIdx = -1;
+  bookmarks.forEach(function(b, i){ if (hIdx < 0 && harnessRe.test(b.url)) hIdx = i; });
+  if (hIdx >= 0){
+    if (bookmarks[hIdx].url !== 'dsh://start'){
+      bookmarks[hIdx].url = 'dsh://start';
+      localStorage.setItem(KEY_BOOKMARKS, JSON.stringify(bookmarks));
+    }
+  } else {
+    bookmarks.unshift({ name:'DeepSeek Harness', url:'dsh://start', icon:'' });
+    localStorage.setItem(KEY_BOOKMARKS, JSON.stringify(bookmarks));
+  }
+
+  var $ = function(id){ return document.getElementById(id); };
+  var engineMenu = $('engineMenu'),
+      searchArea = $('searchArea'),
+      engineBtn  = $('engineBtn'),
+      clockEl    = $('clock'),
+      dateEl     = $('date'),
+      form       = $('searchForm'),
+      input      = $('searchInput'),
+      box        = $('bookmarks'),
+      mask       = $('modalMask'),
+      mName      = $('mName'),
+      mUrl       = $('mUrl'),
+      mIcon      = $('mIcon'),
+      mOk        = $('mOk'),
+      mCancel    = $('mCancel');
+
+  var editingIndex = null;
+
+  function saveBookmarks(){ localStorage.setItem(KEY_BOOKMARKS, JSON.stringify(bookmarks)); }
+
+  /* 名称 -> 稳定色相（用于柔和渐变图标） */
+  function hueFor(s){
+    var h = 0;
+    for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+    return h % 360;
+  }
+  function initialFor(s){
+    var t = (s || '').trim();
+    return t ? Array.from(t)[0].toUpperCase() : '?';
+  }
+
+  /* ================= 渲染：引擎选择菜单 ================= */
+  function renderEngines(){
+    engineMenu.innerHTML = '';
+    Object.keys(ENGINES).forEach(function(k, i){
+      var o = document.createElement('button');
+      o.type = 'button';
+      o.className = 'engine-option' + (k === engine ? ' active' : '');
+      o.setAttribute('role', 'menuitem');
+      o.title = 'Alt+' + (i + 1) + ' 切换';
+
+      var dot = document.createElement('span');
+      dot.className = 'eo-dot';
+      dot.style.background = ENGINES[k].color;
+
+      var name = document.createElement('span');
+      name.className = 'eo-name';
+      name.textContent = ENGINES[k].name;
+
+      var check = document.createElement('span');
+      check.className = 'eo-check';
+      check.textContent = '\u2713';
+
+      o.appendChild(dot);
+      o.appendChild(name);
+      o.appendChild(check);
+
+      o.addEventListener('click', function(){
+        setEngine(k, true);
+        searchArea.classList.remove('show');
+      });
+      engineMenu.appendChild(o);
+    });
+
+    var hint = document.createElement('div');
+    hint.className = 'menu-hint';
+    hint.textContent = 'Alt + 1~4 快捷切换';
+    engineMenu.appendChild(hint);
+  }
+
+  /* 切换搜索引擎并同步界面 */
+  function setEngine(k, refocus){
+    engine = k;
+    localStorage.setItem(KEY_ENGINE, k);
+    renderEngines();
+    engineBtn.textContent = initialFor(ENGINES[k].name);
+    /* 圆钮弹跳动画 */
+    engineBtn.classList.remove('pop');
+    void engineBtn.offsetWidth;
+    engineBtn.classList.add('pop');
+    input.placeholder = (k === 'doubao' || k === 'deepseek')
+      ? '输入问题，回车打开' + ENGINES[k].name
+      : '输入关键词，回车搜索';
+    if (refocus) input.focus();
+  }
+
+  /* ================= 渲染：收藏栏 ================= */
+  function bookmarkEl(b, i){
+    var a = document.createElement('a');
+    a.className = 'bookmark';
+    a.href = b.url;
+    a.target = '_blank';
+    a.rel = 'noopener';
+    var isHarness = /127\.0\.0\.1:3080|^dsh:\/\//i.test(b.url);
+    a.title = isHarness ? '启动 DeepSeek Harness（未运行时自动启动服务）' : b.name;
+
+    var ico = document.createElement('div');
+    ico.className = 'b-icon';
+    var icon = (b.icon || '').trim();
+    if (/^https?:\/\//i.test(icon)){
+      var img = document.createElement('img');
+      img.src = icon;
+      img.alt = '';
+      img.onerror = function(){
+        ico.textContent = initialFor(b.name);
+        ico.style.background = 'linear-gradient(135deg,hsl(' + hueFor(b.name) + ',65%,96%),hsl(' + hueFor(b.name) + ',65%,88%))';
+        ico.style.color = 'hsl(' + hueFor(b.name) + ',38%,30%)';
+      };
+      ico.appendChild(img);
+    } else {
+      ico.textContent = icon || initialFor(b.name);
+      if (isHarness){
+        ico.classList.add('harness');
+      } else {
+        ico.style.background = 'linear-gradient(135deg,hsl(' + hueFor(b.name) + ',65%,96%),hsl(' + hueFor(b.name) + ',65%,88%))';
+        ico.style.color = 'hsl(' + hueFor(b.name) + ',38%,30%)';
+      }
+    }
+
+    var name = document.createElement('span');
+    name.className = 'b-name';
+    name.textContent = b.name;
+
+    var del = document.createElement('button');
+    del.type = 'button';
+    del.className = 'b-del';
+    del.textContent = '\u00d7';
+    del.title = '删除';
+    del.addEventListener('click', function(e){
+      e.preventDefault();
+      e.stopPropagation();
+      if (confirm('删除收藏「' + b.name + '」？')){
+        bookmarks.splice(i, 1);
+        saveBookmarks();
+        renderBookmarks();
+      }
+    });
+
+    /* 右键编辑 */
+    a.addEventListener('contextmenu', function(e){
+      e.preventDefault();
+      openModal(i);
+    });
+
+    a.appendChild(ico);
+    a.appendChild(name);
+    a.appendChild(del);
+    return a;
+  }
+
+  function renderBookmarks(){
+    box.innerHTML = '';
+    bookmarks.forEach(function(b, i){ box.appendChild(bookmarkEl(b, i)); });
+
+    var add = document.createElement('button');
+    add.type = 'button';
+    add.className = 'bookmark b-add';
+    add.title = '添加收藏';
+    var addIco = document.createElement('div');
+    addIco.className = 'b-icon';
+    addIco.textContent = '+';
+    add.appendChild(addIco);
+    add.addEventListener('click', function(){ openModal(null); });
+    box.appendChild(add);
+  }
+
+  /* ================= 弹窗 ================= */
+  function openModal(index){
+    editingIndex = index;
+    var b = (index === null) ? null : bookmarks[index];
+    $('modalTitle').textContent = b ? '编辑收藏' : '添加收藏';
+    mName.value = b ? b.name : '';
+    mUrl.value  = b ? b.url  : '';
+    mIcon.value = b ? (b.icon || '') : '';
+    mask.hidden = false;
+    mName.focus();
+  }
+  function closeModal(){ mask.hidden = true; }
+
+  function saveModal(){
+    var name = mName.value.trim();
+    var url  = mUrl.value.trim();
+    var icon = mIcon.value.trim();
+    if (!name){ mName.focus(); return; }
+    if (!/^https?:\/\//i.test(url)){ mUrl.focus(); return; }
+    var item = { name:name, url:url, icon:icon };
+    if (editingIndex === null) bookmarks.push(item);
+    else bookmarks[editingIndex] = item;
+    saveBookmarks();
+    renderBookmarks();
+    closeModal();
+  }
+
+  /* ================= 事件 ================= */
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    var q = input.value.trim();
+    var url = ENGINES[engine].build(q);
+    if (e.ctrlKey || e.metaKey) window.open(url, '_blank');
+    else window.location.href = url;
+  });
+
+  /* 引擎圆钮：点击显示/隐藏引擎菜单 */
+  engineBtn.addEventListener('click', function(e){
+    e.stopPropagation();
+    searchArea.classList.toggle('show');
+  });
+
+  /* 点击搜索区域外收起引擎菜单 */
+  document.addEventListener('click', function(e){
+    if (!searchArea.contains(e.target)) searchArea.classList.remove('show');
+  });
+
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape'){
+      if (!mask.hidden) closeModal();
+      if (searchArea.classList.contains('show')) searchArea.classList.remove('show');
+      return;
+    }
+    /* Alt+1~4 快捷切换搜索引擎 */
+    if (e.altKey && e.key >= '1' && e.key <= '4'){
+      var keys = Object.keys(ENGINES);
+      var idx = parseInt(e.key, 10) - 1;
+      if (keys[idx]){
+        e.preventDefault();
+        setEngine(keys[idx], false);
+        searchArea.classList.remove('show');
+      }
+    }
+  });
+  [mName, mUrl, mIcon].forEach(function(el){
+    el.addEventListener('keydown', function(e){ if (e.key === 'Enter') saveModal(); });
+  });
+  mOk.addEventListener('click', saveModal);
+  mCancel.addEventListener('click', closeModal);
+  mask.addEventListener('click', function(e){ if (e.target === mask) closeModal(); });
+
+  /* ================= 初始化 ================= */
+  renderEngines();
+  renderBookmarks();
+
+  /* 时钟 */
+  function pad(n){ return n < 10 ? '0' + n : '' + n; }
+  function updateClock(){
+    var d = new Date();
+    clockEl.textContent = pad(d.getHours()) + ':' + pad(d.getMinutes());
+    var week = ['日','一','二','三','四','五','六'];
+    dateEl.textContent = d.getFullYear() + ' 年 ' + (d.getMonth() + 1) + ' 月 ' + d.getDate() + ' 日 · 星期' + week[d.getDay()];
+  }
+  updateClock();
+  setInterval(updateClock, 1000);
+
+  engineBtn.textContent = initialFor(ENGINES[engine].name);
+  input.placeholder = (engine === 'doubao' || engine === 'deepseek')
+    ? '输入问题，回车打开' + ENGINES[engine].name
+    : '输入关键词，回车搜索';
+  input.focus();
+})();
+</script>
+</body>
+</html>
