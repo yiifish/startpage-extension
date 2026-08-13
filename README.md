@@ -45,7 +45,7 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\build.ps1
 
 ## 关于 DeepSeek Harness 收藏
 
-收藏栏第一项「DeepSeek Harness」是指向 `http://127.0.0.1:3080` 的普通链接，其图标右上角的圆点为**运行状态指示灯**（绿 = 运行中，灰 = 未运行，每 8 秒自动探测一次端口）。指示灯仅作状态展示，不负责启动服务；服务需自行运行 `npx @deepseek-ai/dsh web`。
+收藏栏第一项「DeepSeek Harness」是指向 `http://127.0.0.1:3080` 的普通链接。图标右上角圆点为**运行状态指示灯**（绿 = 运行中，灰 = 未运行，每 8 秒自动探测一次端口）；收藏下方有**启停开关**：点击可后台启动（`npx @deepseek-ai/dsh web`）或优雅停止（发送 Ctrl+C 收尾）。启停依赖本机注册的 `dsh://` 协议（注册表 `HKCU\Software\Classes\dsh`，指向 `%LOCALAPPDATA%\DeepSeekHarness\start-dsh.ps1`），其他机器上可不配置，仅使用指示灯与链接。
 
 ## 许可
 
