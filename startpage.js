@@ -65,6 +65,29 @@
 
   var editingIndex = null;
 
+  /* ================= Harness 运行状态检测 ================= */
+  var harnessDots = [];
+  function setHarnessState(up){
+    harnessDots.forEach(function(d){
+      d.classList.remove('checking');
+      d.classList.toggle('running', up);
+      d.title = up
+        ? 'DeepSeek Harness 运行中 · 点击优雅停止'
+        : 'DeepSeek Harness 未运行 · 点击启动';
+    });
+  }
+  function checkHarness(){
+    harnessDots.forEach(function(d){
+      d.classList.add('checking');
+      d.classList.remove('running');
+    });
+    var ctrl = new AbortController();
+    var timer = setTimeout(function(){ ctrl.abort(); }, 2000);
+    fetch('http://127.0.0.1:3080/', { mode:'no-cors', cache:'no-store', signal:ctrl.signal })
+      .then(function(){ clearTimeout(timer); setHarnessState(true); })
+      .catch(function(){ clearTimeout(timer); setHarnessState(false); });
+  }
+
   function saveBookmarks(){ localStorage.setItem(KEY_BOOKMARKS, JSON.stringify(bookmarks)); }
 
   /* 名称 -> 稳定色相（用于柔和渐变图标） */
@@ -141,7 +164,8 @@
     a.target = '_blank';
     a.rel = 'noopener';
     var isHarness = /127\.0\.0\.1:3080|^dsh:\/\//i.test(b.url);
-    a.title = isHarness ? '启动 DeepSeek Harness（未运行时自动启动服务）' : b.name;
+    if (isHarness) a.classList.add('managed');
+    a.title = isHarness ? 'DeepSeek Harness（点击启动服务）' : b.name;
 
     var ico = document.createElement('div');
     ico.className = 'b-icon';
@@ -170,30 +194,50 @@
     name.className = 'b-name';
     name.textContent = b.name;
 
-    var del = document.createElement('button');
-    del.type = 'button';
-    del.className = 'b-del';
-    del.textContent = '\u00d7';
-    del.title = '删除';
-    del.addEventListener('click', function(e){
-      e.preventDefault();
-      e.stopPropagation();
-      if (confirm('删除收藏「' + b.name + '」？')){
-        bookmarks.splice(i, 1);
-        saveBookmarks();
-        renderBookmarks();
-      }
-    });
+    if (isHarness){
+      /* 运行状态指示灯：绿点点击 = 优雅关闭；灰点点击 = 启动 */
+      var dot = document.createElement('span');
+      dot.className = 'b-dot';
+      dot.title = 'DeepSeek Harness 状态检测中…';
+      dot.addEventListener('click', function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        if (dot.classList.contains('running')){
+          if (confirm('停止 DeepSeek Harness？（发送 Ctrl+C 优雅收尾，稍后可随时重新启动）')){
+            window.location.href = 'dsh://stop';
+          }
+        } else {
+          window.location.href = 'dsh://start';
+        }
+      });
+      harnessDots.push(dot);
+      a.appendChild(dot);
+    } else {
+      var del = document.createElement('button');
+      del.type = 'button';
+      del.className = 'b-del';
+      del.textContent = '\u00d7';
+      del.title = '删除';
+      del.addEventListener('click', function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        if (confirm('删除收藏「' + b.name + '」？')){
+          bookmarks.splice(i, 1);
+          saveBookmarks();
+          renderBookmarks();
+        }
+      });
+      a.appendChild(del);
 
-    /* 右键编辑 */
-    a.addEventListener('contextmenu', function(e){
-      e.preventDefault();
-      openModal(i);
-    });
+      /* 右键编辑 */
+      a.addEventListener('contextmenu', function(e){
+        e.preventDefault();
+        openModal(i);
+      });
+    }
 
     a.appendChild(ico);
     a.appendChild(name);
-    a.appendChild(del);
     return a;
   }
 
@@ -287,6 +331,8 @@
   /* ================= 初始化 ================= */
   renderEngines();
   renderBookmarks();
+  checkHarness();
+  setInterval(checkHarness, 8000);
 
   /* 时钟 */
   function pad(n){ return n < 10 ? '0' + n : '' + n; }

@@ -279,6 +279,33 @@
   .bookmark:hover .b-del{display:flex}
   .b-del:hover{background:#fee2e2;color:#dc2626}
 
+  /* DeepSeek Harness 运行状态指示灯 */
+  .b-dot{
+    position:absolute;
+    top:-2px;
+    right:-2px;
+    width:12px;
+    height:12px;
+    border-radius:50%;
+    background:#d1d5db;                    /* 灰 = 未运行 */
+    border:2px solid #fff;
+    box-shadow:0 1px 3px rgba(15,23,42,.18);
+    cursor:pointer;
+    z-index:2;
+    transition:background .2s ease, box-shadow .2s ease;
+  }
+  .b-dot.checking{
+    background:#f59e0b;                    /* 琥珀 = 检测中 */
+    animation:dotPulse 1s ease-in-out infinite;
+  }
+  .b-dot.running{
+    background:#22c55e;                    /* 绿 = 运行中 */
+    box-shadow:0 0 7px rgba(34,197,94,.65);
+  }
+  @keyframes dotPulse{0%,100%{opacity:1}50%{opacity:.35}}
+  /* 系统托管项（Harness）：隐藏删除按钮 */
+  .bookmark.managed .b-del{display:none}
+
   /* 添加按钮 */
   .b-add{border:0;background:transparent;cursor:pointer;font-family:inherit}
   .b-add .b-icon{
@@ -461,6 +488,29 @@
 
   var editingIndex = null;
 
+  /* ================= Harness 运行状态检测 ================= */
+  var harnessDots = [];
+  function setHarnessState(up){
+    harnessDots.forEach(function(d){
+      d.classList.remove('checking');
+      d.classList.toggle('running', up);
+      d.title = up
+        ? 'DeepSeek Harness 运行中 · 点击优雅停止'
+        : 'DeepSeek Harness 未运行 · 点击启动';
+    });
+  }
+  function checkHarness(){
+    harnessDots.forEach(function(d){
+      d.classList.add('checking');
+      d.classList.remove('running');
+    });
+    var ctrl = new AbortController();
+    var timer = setTimeout(function(){ ctrl.abort(); }, 2000);
+    fetch('http://127.0.0.1:3080/', { mode:'no-cors', cache:'no-store', signal:ctrl.signal })
+      .then(function(){ clearTimeout(timer); setHarnessState(true); })
+      .catch(function(){ clearTimeout(timer); setHarnessState(false); });
+  }
+
   function saveBookmarks(){ localStorage.setItem(KEY_BOOKMARKS, JSON.stringify(bookmarks)); }
 
   /* 名称 -> 稳定色相（用于柔和渐变图标） */
@@ -537,7 +587,8 @@
     a.target = '_blank';
     a.rel = 'noopener';
     var isHarness = /127\.0\.0\.1:3080|^dsh:\/\//i.test(b.url);
-    a.title = isHarness ? '启动 DeepSeek Harness（未运行时自动启动服务）' : b.name;
+    if (isHarness) a.classList.add('managed');
+    a.title = isHarness ? 'DeepSeek Harness（点击启动服务）' : b.name;
 
     var ico = document.createElement('div');
     ico.className = 'b-icon';
@@ -566,30 +617,50 @@
     name.className = 'b-name';
     name.textContent = b.name;
 
-    var del = document.createElement('button');
-    del.type = 'button';
-    del.className = 'b-del';
-    del.textContent = '\u00d7';
-    del.title = '删除';
-    del.addEventListener('click', function(e){
-      e.preventDefault();
-      e.stopPropagation();
-      if (confirm('删除收藏「' + b.name + '」？')){
-        bookmarks.splice(i, 1);
-        saveBookmarks();
-        renderBookmarks();
-      }
-    });
+    if (isHarness){
+      /* 运行状态指示灯：绿点点击 = 优雅关闭；灰点点击 = 启动 */
+      var dot = document.createElement('span');
+      dot.className = 'b-dot';
+      dot.title = 'DeepSeek Harness 状态检测中…';
+      dot.addEventListener('click', function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        if (dot.classList.contains('running')){
+          if (confirm('停止 DeepSeek Harness？（发送 Ctrl+C 优雅收尾，稍后可随时重新启动）')){
+            window.location.href = 'dsh://stop';
+          }
+        } else {
+          window.location.href = 'dsh://start';
+        }
+      });
+      harnessDots.push(dot);
+      a.appendChild(dot);
+    } else {
+      var del = document.createElement('button');
+      del.type = 'button';
+      del.className = 'b-del';
+      del.textContent = '\u00d7';
+      del.title = '删除';
+      del.addEventListener('click', function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        if (confirm('删除收藏「' + b.name + '」？')){
+          bookmarks.splice(i, 1);
+          saveBookmarks();
+          renderBookmarks();
+        }
+      });
+      a.appendChild(del);
 
-    /* 右键编辑 */
-    a.addEventListener('contextmenu', function(e){
-      e.preventDefault();
-      openModal(i);
-    });
+      /* 右键编辑 */
+      a.addEventListener('contextmenu', function(e){
+        e.preventDefault();
+        openModal(i);
+      });
+    }
 
     a.appendChild(ico);
     a.appendChild(name);
-    a.appendChild(del);
     return a;
   }
 
@@ -683,6 +754,8 @@
   /* ================= 初始化 ================= */
   renderEngines();
   renderBookmarks();
+  checkHarness();
+  setInterval(checkHarness, 8000);
 
   /* 时钟 */
   function pad(n){ return n < 10 ? '0' + n : '' + n; }
