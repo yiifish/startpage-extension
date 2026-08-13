@@ -12,7 +12,7 @@
 
   /* ================= 默认收藏（可自行修改） ================= */
   var DEFAULT_BOOKMARKS = [
-    { name:'DeepSeek Harness', url:'dsh://start' },
+    { name:'DeepSeek Harness', url:'http://127.0.0.1:3080' },
     { name:'GitHub',      url:'https://github.com' },
     { name:'哔哩哔哩',     url:'https://www.bilibili.com' },
     { name:'知乎',        url:'https://www.zhihu.com' },
@@ -33,17 +33,17 @@
   try { bookmarks = JSON.parse(localStorage.getItem(KEY_BOOKMARKS) || ''); } catch(e){ bookmarks = null; }
   if (!Array.isArray(bookmarks)) bookmarks = DEFAULT_BOOKMARKS.slice();
 
-  /* 确保「启动 DeepSeek Harness」收藏存在，并指向 dsh:// 自动启动协议（固定在第一位） */
+  /* 确保「DeepSeek Harness」收藏存在（固定第一位），并回退为普通链接 */
   var harnessRe = /127\.0\.0\.1:3080|^dsh:\/\//i;
   var hIdx = -1;
   bookmarks.forEach(function(b, i){ if (hIdx < 0 && harnessRe.test(b.url)) hIdx = i; });
   if (hIdx >= 0){
-    if (bookmarks[hIdx].url !== 'dsh://start'){
-      bookmarks[hIdx].url = 'dsh://start';
+    if (bookmarks[hIdx].url !== 'http://127.0.0.1:3080'){
+      bookmarks[hIdx].url = 'http://127.0.0.1:3080';
       localStorage.setItem(KEY_BOOKMARKS, JSON.stringify(bookmarks));
     }
   } else {
-    bookmarks.unshift({ name:'DeepSeek Harness', url:'dsh://start', icon:'' });
+    bookmarks.unshift({ name:'DeepSeek Harness', url:'http://127.0.0.1:3080', icon:'' });
     localStorage.setItem(KEY_BOOKMARKS, JSON.stringify(bookmarks));
   }
 
@@ -72,8 +72,8 @@
       d.classList.remove('checking');
       d.classList.toggle('running', up);
       d.title = up
-        ? 'DeepSeek Harness 运行中 · 点击优雅停止'
-        : 'DeepSeek Harness 未运行 · 点击启动';
+        ? 'DeepSeek Harness 运行中'
+        : 'DeepSeek Harness 未运行';
     });
   }
   function checkHarness(){
@@ -165,7 +165,7 @@
     a.rel = 'noopener';
     var isHarness = /127\.0\.0\.1:3080|^dsh:\/\//i.test(b.url);
     if (isHarness) a.classList.add('managed');
-    a.title = isHarness ? 'DeepSeek Harness（点击启动服务）' : b.name;
+    a.title = isHarness ? 'DeepSeek Harness' : b.name;
 
     var ico = document.createElement('div');
     ico.className = 'b-icon';
@@ -195,21 +195,11 @@
     name.textContent = b.name;
 
     if (isHarness){
-      /* 运行状态指示灯：绿点点击 = 优雅关闭；灰点点击 = 启动 */
+      /* 运行状态指示灯：纯展示，仅探测状态 */
       var dot = document.createElement('span');
       dot.className = 'b-dot';
       dot.title = 'DeepSeek Harness 状态检测中…';
-      dot.addEventListener('click', function(e){
-        e.preventDefault();
-        e.stopPropagation();
-        if (dot.classList.contains('running')){
-          if (confirm('停止 DeepSeek Harness？（发送 Ctrl+C 优雅收尾，稍后可随时重新启动）')){
-            window.location.href = 'dsh://stop';
-          }
-        } else {
-          window.location.href = 'dsh://start';
-        }
-      });
+      dot.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); });
       harnessDots.push(dot);
       a.appendChild(dot);
     } else {

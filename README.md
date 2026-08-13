@@ -45,7 +45,7 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\build.ps1
 
 ## 关于 DeepSeek Harness 收藏
 
-收藏栏第一项「DeepSeek Harness」指向 `dsh://start` 自定义协议：点击时由本地脚本检查 3080 端口，未运行时自动执行 `npx @deepseek-ai/dsh web` 并等待就绪后打开页面。该协议需在本地注册一次（脚本：`%LOCALAPPDATA%\DeepSeekHarness\start-dsh.ps1`）。在其他机器上，可将此项改为直接指向 `http://127.0.0.1:3080`。
+收藏栏第一项「DeepSeek Harness」是指向 `http://127.0.0.1:3080` 的普通链接，其图标右上角的圆点为**运行状态指示灯**（绿 = 运行中，灰 = 未运行，每 8 秒自动探测一次端口）。指示灯仅作状态展示，不负责启动服务；服务需自行运行 `npx @deepseek-ai/dsh web`。
 
 ## 许可
 
