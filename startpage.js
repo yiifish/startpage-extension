@@ -12,7 +12,7 @@
 
   /* ================= 默认收藏（可自行修改） ================= */
   var DEFAULT_BOOKMARKS = [
-    { name:'DeepSeek Harness', url:'http://127.0.0.1:3080' },
+    { name:'DeepSeek Harness', url:'dsh://start' },
     { name:'GitHub',      url:'https://github.com' },
     { name:'哔哩哔哩',     url:'https://www.bilibili.com' },
     { name:'知乎',        url:'https://www.zhihu.com' },
@@ -33,17 +33,17 @@
   try { bookmarks = JSON.parse(localStorage.getItem(KEY_BOOKMARKS) || ''); } catch(e){ bookmarks = null; }
   if (!Array.isArray(bookmarks)) bookmarks = DEFAULT_BOOKMARKS.slice();
 
-  /* 确保「DeepSeek Harness」收藏存在（固定第一位），并回退为普通链接 */
+  /* 确保「DeepSeek Harness」收藏存在（固定第一位），点击自动启动服务 */
   var harnessRe = /127\.0\.0\.1:3080|^dsh:\/\//i;
   var hIdx = -1;
   bookmarks.forEach(function(b, i){ if (hIdx < 0 && harnessRe.test(b.url)) hIdx = i; });
   if (hIdx >= 0){
-    if (bookmarks[hIdx].url !== 'http://127.0.0.1:3080'){
-      bookmarks[hIdx].url = 'http://127.0.0.1:3080';
+    if (bookmarks[hIdx].url !== 'dsh://start'){
+      bookmarks[hIdx].url = 'dsh://start';
       localStorage.setItem(KEY_BOOKMARKS, JSON.stringify(bookmarks));
     }
   } else {
-    bookmarks.unshift({ name:'DeepSeek Harness', url:'http://127.0.0.1:3080', icon:'' });
+    bookmarks.unshift({ name:'DeepSeek Harness', url:'dsh://start', icon:'' });
     localStorage.setItem(KEY_BOOKMARKS, JSON.stringify(bookmarks));
   }
 
@@ -67,7 +67,6 @@
 
   /* ================= Harness 运行状态检测 ================= */
   var harnessDots = [];
-  var harnessToggles = [];
   function setHarnessState(up){
     harnessDots.forEach(function(d){
       d.classList.remove('checking');
@@ -76,23 +75,11 @@
         ? 'DeepSeek Harness 运行中'
         : 'DeepSeek Harness 未运行';
     });
-    harnessToggles.forEach(function(t){
-      t.classList.remove('checking');
-      t.disabled = false;
-      t.classList.toggle('on', up);
-      t.title = up
-        ? 'DeepSeek Harness 运行中 · 点击停止'
-        : 'DeepSeek Harness 已停止 · 点击启动';
-    });
   }
   function checkHarness(){
     harnessDots.forEach(function(d){
       d.classList.add('checking');
       d.classList.remove('running');
-    });
-    harnessToggles.forEach(function(t){
-      t.classList.add('checking');
-      t.disabled = true;
     });
     var ctrl = new AbortController();
     var timer = setTimeout(function(){ ctrl.abort(); }, 2000);
@@ -178,7 +165,7 @@
     a.rel = 'noopener';
     var isHarness = /127\.0\.0\.1:3080|^dsh:\/\//i.test(b.url);
     if (isHarness) a.classList.add('managed');
-    a.title = isHarness ? 'DeepSeek Harness' : b.name;
+    a.title = isHarness ? 'DeepSeek Harness（未运行时自动启动服务）' : b.name;
 
     var ico = document.createElement('div');
     ico.className = 'b-icon';
@@ -215,27 +202,6 @@
       dot.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); });
       harnessDots.push(dot);
       a.appendChild(dot);
-
-      /* 启停开关：收藏下方，开 = 运行中，关 = 已停止 */
-      var toggle = document.createElement('button');
-      toggle.type = 'button';
-      toggle.className = 'b-toggle';
-      toggle.title = 'DeepSeek Harness 状态检测中…';
-      toggle.addEventListener('click', function(e){
-        e.preventDefault();
-        e.stopPropagation();
-        if (toggle.classList.contains('checking') || toggle.disabled) return;
-        /* 立即置为检测中，防止连点 */
-        toggle.classList.add('checking');
-        toggle.disabled = true;
-        if (toggle.classList.contains('on')){
-          window.location.href = 'dsh://stop';
-        } else {
-          window.location.href = 'dsh://start-noopen';
-        }
-      });
-      harnessToggles.push(toggle);
-      a.appendChild(toggle);
     } else {
       var del = document.createElement('button');
       del.type = 'button';

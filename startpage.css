@@ -299,45 +299,6 @@
   /* 系统托管项（Harness）：隐藏删除按钮 */
   .bookmark.managed .b-del{display:none}
 
-  /* DeepSeek Harness 启停开关（骑在图标下缘，不增加行高，保持网格整齐） */
-  .b-toggle{
-    position:absolute;
-    left:50%;
-    top:46px;                          /* 图标底缘(52px)上方 6px，重叠在圆形下边 */
-    transform:translateX(-50%);
-    width:30px;
-    height:14px;
-    border-radius:7px;
-    border:0;
-    padding:0;
-    background:#d1d5db;                /* 灰 = 已停止 */
-    cursor:pointer;
-    transition:background .2s ease, box-shadow .2s ease, filter .15s ease;
-  }
-  .b-toggle::after{
-    content:'';
-    position:absolute;
-    top:2px;
-    left:2px;
-    width:10px;
-    height:10px;
-    border-radius:50%;
-    background:#fff;
-    box-shadow:0 1px 2px rgba(15,23,42,.3);
-    transition:transform .18s ease;
-  }
-  .b-toggle.on{
-    background:#22c55e;                /* 绿 = 运行中 */
-    box-shadow:0 0 5px rgba(34,197,94,.5);
-  }
-  .b-toggle.on::after{transform:translateX(16px)}
-  .b-toggle.checking{
-    background:#f59e0b;                /* 琥珀 = 检测中 */
-    animation:dotPulse 1s ease-in-out infinite;
-  }
-  .b-toggle:hover:not(:disabled){filter:brightness(1.1)}
-  .b-toggle:disabled{cursor:default}
-
   /* 添加按钮 */
   .b-add{border:0;background:transparent;cursor:pointer;font-family:inherit}
   .b-add .b-icon{
