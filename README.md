@@ -45,7 +45,7 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\build.ps1
 
 ## 关于 DeepSeek Harness 收藏
 
-收藏栏第一项「DeepSeek Harness」指向 `dsh://start` 协议：点击时若本机 3080 端口未运行，会自动后台执行 `npx @deepseek-ai/dsh web` 并等待就绪后打开页面；已在运行则直接打开。图标右上角圆点为**运行状态指示灯**（绿 = 运行中，灰 = 未运行，每 8 秒自动探测一次端口）。自动启动依赖本机注册的 `dsh://` 协议（注册表 `HKCU\Software\Classes\dsh`，指向 `%LOCALAPPDATA%\DeepSeekHarness\start-dsh.ps1`）；其他机器上可不配置，仅使用指示灯与普通链接。
+收藏栏第一项「DeepSeek Harness」指向 `dsh://start` 协议：点击时若本机 3080 端口未运行，会在隐藏窗口中后台启动本地源码仓库（`pnpm dsh web --port 3080 --no-open`），等待就绪后打开页面；已在运行则直接打开。图标右上角圆点为**运行状态指示灯**（绿 = 运行中，灰 = 未运行，每 8 秒自动探测一次端口）。自动启动依赖本机注册的 `dsh://` 协议（注册表 `HKCU\Software\Classes\dsh`，指向 `%LOCALAPPDATA%\DeepSeekHarness\start-dsh.ps1`，启停记录见同目录 `start.log`，服务输出见 `harness.log`）；其他机器上可不配置，仅使用指示灯与普通链接。
 
 ## 许可
 
