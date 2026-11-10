@@ -45,7 +45,35 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\build.ps1
 
 ## 关于 DeepSeek Harness 收藏
 
-收藏栏第一项「DeepSeek Harness」指向 `dsh://start` 协议：点击时若本机 3080 端口未运行，会在隐藏窗口中后台启动本地源码仓库（`pnpm dsh web --port 3080 --no-open`），等待就绪后**捕获服务打印的带 token 认证 URL**（`web-url.txt`，每次启动随机生成，用于换取浏览器会话 Cookie）并打开；已在运行则校验并打开缓存的认证 URL。图标右上角圆点为**运行状态指示灯**（绿 = 运行中，灰 = 未运行，每 8 秒自动探测一次端口）。自动启动依赖本机注册的 `dsh://` 协议（注册表 `HKCU\Software\Classes\dsh`，指向 `%LOCALAPPDATA%\DeepSeekHarness\start-dsh.ps1`，启停记录见同目录 `start.log`，服务输出见 `harness.log`）；其他机器上可不配置，仅使用指示灯与普通链接。
+收藏栏第一项「DeepSeek Harness」指向 `dsh://start`，由本机注册的 `dsh://` 协议处理器负责启动/打开。图标右上角圆点是**运行状态指示灯**（绿 = 3080 在监听，灰 = 未监听，每 8 秒探测一次）。
+
+### 首次安装（每台机器一次，当前用户级，无需管理员）
+
+```powershell
+pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\install-dsh-protocol.ps1
+```
+
+脚本注册 `HKCU\Software\Classes\dsh`，处理程序指向本仓库的 `scripts\start-dsh.ps1`。浏览器第一次点击收藏时会询问是否打开外部应用，勾选「始终允许」后不再询问。卸载：同一命令加 `-Uninstall`。
+
+> 协议里记录的是绝对路径，本仓库改名或移动后需重新运行一次安装脚本。
+
+### 点击收藏时发生什么
+
+| 3080 端口 | 行为 |
+| --- | --- |
+| 已在监听，且上次由本脚本启动 | 直接打开 `server.json` 里缓存的带 token 认证 URL |
+| 已在监听，但由其他方式启动 | 打开 `http://127.0.0.1:3080/`（会话 Cookie 有效期 30 天） |
+| 未监听 | 隐藏窗口后台启动 `dsh web --port 3080 --no-open`，从输出中捕获 `dsh web: http://127.0.0.1:3080/?token=…` 并打开 |
+
+为什么不直接在页面里打开：认证 URL 的 token 是**进程级**的，只有 `dsh web` 启动时打印，网页脚本既不能启动进程也拿不到它；而且会话 Cookie 是 `SameSite=Strict`，从扩展页面跨站跳到 3080 不会带上 Cookie。由协议处理器（系统级导航）打开才既拿得到 token，又能带上 Cookie。
+
+### 日志与状态（`%LOCALAPPDATA%\DeepSeekHarness\`）
+
+- `start.log` — 每次点击的判断与结果（排查优先看这个）
+- `harness.log` / `harness.error.log` — 服务 stdout / stderr
+- `server.json` — 由本脚本启动的服务的 pid、端口与认证 URL
+
+`dsh` 的解析顺序：`DSH_LAUNCH_COMMAND` 环境变量 → PATH 上的 `dsh.cmd` / `dsh.exe` → npx 缓存中最新的 `@deepseek-ai\dsh\lib\bin.js` → `npx -y @deepseek-ai/dsh`。不注册协议时，点击收藏只会让浏览器停在 `dsh://start` 空白页。
 
 ## 许可
 
